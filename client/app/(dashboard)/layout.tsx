@@ -14,7 +14,7 @@ import { User } from "@/types/user"; // Import the User type
 import Loading from './loading'
 
 export default function ChatLayout({ children }: { children: React.ReactNode }) {
-  const isLoading = useProtectedRoute(); // Get the loading state
+  const isLoading = useProtectedRoute("chat"); // Get the loading state
   const [showFriends, setShowFriends] = useState(false);
   const isMobile = useMobile();
   const { theme, setTheme } = useTheme();

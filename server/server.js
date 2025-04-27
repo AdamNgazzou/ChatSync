@@ -4,12 +4,16 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const WebSocket = require('ws');
-const routes = require('./src/routes/chatRoute');
 const { handleWSConnection } = require('./src/controllers/wsController');
 const { connectDB } = require('./src/config/db'); // Import the database connection function
 
 // import routes
 const authRoutes = require('./src/routes/authRoute');
+const chatRoutes = require('./src/routes/chatRoute');
+const roomRoutes = require('./src/routes/roomRoute');
+
+//import middlewares 
+const verifyToken = require("./src/middlewares/verifyToken");
 
 
 const app = express();
@@ -18,12 +22,14 @@ const server = http.createServer(app);
 
 // Allow requests from the frontend's origin
 app.use(cors({
-    origin: 'http://localhost:3000', // Replace with your frontend's URL
+    origin: 'http://localhost:3000',
     credentials: true, // Allow cookies if needed
-  }));
+}));
 app.use(express.json()); // Middleware to parse JSON requests
 
-app.use('/', routes);
+//routes
+app.use("/room", verifyToken, roomRoutes);
+app.use('/chat', verifyToken, chatRoutes); // apply middleware globally in this route
 app.use("/auth", authRoutes); // Mount authentication routes
 
 const wss = new WebSocket.Server({ noServer: true });

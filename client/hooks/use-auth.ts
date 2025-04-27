@@ -4,19 +4,29 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 
-export function useProtectedRoute() {
+export function useProtectedRoute(routeType: "auth" | "chat") {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true); // Add a loading state
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-
-    if (!token) {
-      router.push("/login"); // Redirect to login if no token is found
-    } else {
-      setIsLoading(false); // Authentication check is complete
+    console.log(token);
+    if (routeType === "auth") {
+      // Protecting auth routes (e.g., /login, /register)
+      if (token) {
+        router.push("/chat"); // Redirect to /chat if token exists
+      } else {
+        setIsLoading(false); // No token, allow access to auth routes
+      }
+    } else if (routeType === "chat") {
+      // Protecting chat routes (e.g., /chat)
+      if (!token) {
+        router.push("/login"); // Redirect to /login if no token is found
+      } else {
+        setIsLoading(false); // Token exists, allow access to chat routes
+      }
     }
-  }, [router]);
+  }, [router, routeType]);
 
   return isLoading; // Return the loading state
 }
