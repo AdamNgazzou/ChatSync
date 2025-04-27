@@ -6,7 +6,6 @@ import { motion } from "framer-motion"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 
 interface FriendsListProps {
   activeChat: string | null
@@ -91,7 +90,6 @@ const friends = [
 
 export default function FriendsList({ activeChat, setActiveChat }: FriendsListProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const router = useRouter()
 
   const filteredFriends = friends.filter((friend) => friend.name.toLowerCase().includes(searchQuery.toLowerCase()))
 

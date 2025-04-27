@@ -11,50 +11,19 @@ import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from 
 import { Label } from "@/components/ui/label"
 import { Loader2, User, Mail, Lock } from "lucide-react"
 import { motion } from "framer-motion"
+import { useAuth } from "@/hooks/use-auth";
 
 export default function RegisterPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
-  const router = useRouter()
+  const { register, isLoading, error } = useAuth();
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
-
-    const formData = new FormData(e.currentTarget)
-    const name = formData.get("name") as string
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
-    const confirmPassword = formData.get("confirmPassword") as string
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      // Simulate registration API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // In a real app, you would call your registration API here
-      // const response = await fetch('/api/auth/register', {
-      //   method: 'POST',
-      //   body: JSON.stringify({ name, email, password }),
-      //   headers: { 'Content-Type': 'application/json' }
-      // })
-
-      // if (!response.ok) throw new Error('Registration failed')
-
-      // Redirect to chat after successful registration
-      router.push("/chat")
-    } catch (err) {
-      setError("Registration failed. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    e.preventDefault();
+    await register(username, email, password);
+  };
 
   return (
     <div className="auth-container">
@@ -112,17 +81,19 @@ export default function RegisterPage() {
           )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium">
+              <Label htmlFor="username" className="text-sm font-medium">
                 Full Name
               </Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="name"
-                  name="name"
+                  id="username"
+                  name="username"
                   placeholder="John Doe"
                   required
+                  value={username}
                   disabled={isLoading}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="glass-input pl-10"
                 />
               </div>
@@ -137,6 +108,8 @@ export default function RegisterPage() {
                   id="email"
                   name="email"
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
                   required
                   disabled={isLoading}
@@ -154,6 +127,8 @@ export default function RegisterPage() {
                   id="password"
                   name="password"
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
                   className="glass-input pl-10"

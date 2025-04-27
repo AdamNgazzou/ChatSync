@@ -1,17 +1,30 @@
 // server/server.js
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const http = require('http');
 const WebSocket = require('ws');
 const routes = require('./src/routes/chatRoute');
 const { handleWSConnection } = require('./src/controllers/wsController');
 const { connectDB } = require('./src/config/db'); // Import the database connection function
 
+// import routes
+const authRoutes = require('./src/routes/authRoute');
+
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 
+// Allow requests from the frontend's origin
+app.use(cors({
+    origin: 'http://localhost:3000', // Replace with your frontend's URL
+    credentials: true, // Allow cookies if needed
+  }));
+app.use(express.json()); // Middleware to parse JSON requests
+
 app.use('/', routes);
+app.use("/auth", authRoutes); // Mount authentication routes
 
 const wss = new WebSocket.Server({ noServer: true });
 

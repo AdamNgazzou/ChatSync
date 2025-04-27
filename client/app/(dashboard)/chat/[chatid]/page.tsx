@@ -59,10 +59,7 @@ export default function ChatPage() {
     }
   }
 
-  const handleLogout = () => {
-    // In a real app, you would call your logout API here
-    router.push("/login")
-  }
+ 
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark")
@@ -71,53 +68,7 @@ export default function ChatPage() {
   return (
     <div className="flex h-screen bg-gradient-to-br from-brand-50 to-brand-100 dark:from-dark-200 dark:to-dark-300">
       {/* Sidebar - hidden on mobile unless toggled */}
-      <motion.div
-        initial={{ x: isMobile ? -300 : 0, opacity: isMobile ? 0 : 1 }}
-        animate={{ x: isMobile && !showFriends ? -300 : 0, opacity: isMobile && !showFriends ? 0 : 1 }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="w-full md:w-80 flex-col glass-panel rounded-r-2xl shadow-glass dark:shadow-glass-dark z-10 absolute md:relative h-full overflow-y-auto"
-      >
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700/30 flex items-center justify-between  ">
-          <div className="font-semibold text-lg flex items-center">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center mr-2">
-              <MessageSquare className="h-4 w-4 text-white" />
-            </div>
-            ChatSync
-          </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setShowFriends(false)} className="md:hidden">
-              <MessageSquare className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={toggleTheme}>
-              {mounted && (theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />)}
-            </Button>
-          </div>
-        </div>
-
-        <FriendsList
-          activeChat={chatId}
-          setActiveChat={(friendId) => {
-            router.push(`/chat/${friendId}`)
-            if (isMobile) setShowFriends(false)
-          }}
-        />
-
-        <div className="mt-auto p-4 border-t border-slate-200 dark:border-slate-700/30">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 border-2 border-white dark:border-dark-200">
-              <AvatarImage src="/placeholder.svg?height=40&width=40" />
-              <AvatarFallback className="bg-gradient-to-br from-brand-400 to-brand-600 text-white">JD</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="font-medium">John Doe</div>
-              <div className="text-xs text-slate-500">john.doe@example.com</div>
-            </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </motion.div>
+      
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col">
