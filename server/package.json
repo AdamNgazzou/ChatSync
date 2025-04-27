@@ -1,0 +1,21 @@
+{
+  "name": "websocket-chatapp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "http": "^0.0.1-security",
+    "socket.io": "^4.8.1",
+    "ws": "^8.18.1"
+  }
+}

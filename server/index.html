@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>hey</h1>
+    <button onclick="">send msg</button>
+</body>
+<script>
+    // Open this in two browser tabs for testing
+const ws = new WebSocket('ws://localhost:3001/chat');
+
+ws.onopen = () => {
+  console.log('Connected to server');
+  // Send a test message after connecting
+  // ws.send('Hello from this client!');
+};
+
+ws.onmessage = (event) => {
+  console.log('Received from server:', event.data);
+};
+
+// To send a message from the console:
+ws.send('Hello from client X');
+</script>
+</html>
