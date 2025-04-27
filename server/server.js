@@ -5,6 +5,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const routes = require('./src/routes/chatRoute');
 const { handleWSConnection } = require('./src/controllers/wsController');
+const { connectDB } = require('./src/config/db'); // Import the database connection function
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,4 +25,13 @@ server.on('upgrade', (request, socket, head) => {
     }
 });
 
-server.listen(PORT, () => console.log(`Server listening on port: ${PORT}`));
+// Connect to the database and start the server
+(async () => {
+    try {
+        await connectDB(); // Wait for the database connection to be established
+        server.listen(PORT, () => console.log(`Server listening on port: ${PORT}`));
+    } catch (err) {
+        console.error("Failed to start the server:", err);
+        process.exit(1); // Exit the process if the database connection fails
+    }
+})();
