@@ -47,6 +47,7 @@ export default function ChatPage() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [wasAtBottomBeforeNewMessage, setWasAtBottomBeforeNewMessage] = useState(true);
+  const isInitialLoad = useRef(true);
 
   const { ref: loadMoreRef, inView } = useInView({
     threshold: 0,
@@ -82,11 +83,11 @@ export default function ChatPage() {
     if (chatId) {
       setOldMessages([]);
       setHasMore(true);
+      isInitialLoad.current = true;
       fetchOldMessages(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId]);
-
+  
   useEffect(() => {
     if (inView && hasMore && !isLoading) {
       fetchOldMessages();
@@ -134,16 +135,20 @@ export default function ChatPage() {
       setIsLoading(false);
     }
   };
-    useEffect(() => {
-    console.log('Messages updated:', {
-      oldMessagesCount: oldMessages.length,
-      firstMessageTimestamp: oldMessages[0]?.createdAt,
-      lastMessageTimestamp: oldMessages[oldMessages.length - 1]?.createdAt
-    });
+  useEffect(() => {
+    if (isInitialLoad.current && oldMessages.length > 0) {
+      messagesEndRef.current?.scrollIntoView();
+      isInitialLoad.current = false;
+    }
   }, [oldMessages]);
+  
 
-
-
+  useEffect(() => {
+    if (!isInitialLoad.current && wasAtBottomBeforeNewMessage) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, wasAtBottomBeforeNewMessage]);
+  
   useEffect(() => {
     const scrollContainer = scrollAreaRef.current;
     if (!scrollContainer) return;
@@ -151,16 +156,16 @@ export default function ChatPage() {
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
       const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-      setIsAtBottom(distanceFromBottom < 10); // <= Tighter check
+      setIsAtBottom(distanceFromBottom < 10);
     };
   
-    scrollContainer.addEventListener("scroll", handleScroll);
-  
-    return () => {
-      scrollContainer.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-  
+    // Only add scroll listener after initial load
+    if (!isInitialLoad.current) {
+      scrollContainer.addEventListener("scroll", handleScroll);
+      return () => scrollContainer.removeEventListener("scroll", handleScroll);
+    }
+  }, [isInitialLoad.current]);
+
   useEffect(() => {
     // Save if we were at bottom BEFORE new messages are appended
     setWasAtBottomBeforeNewMessage(isAtBottom);
