@@ -9,7 +9,7 @@ interface Message {
   timestamp: number
 }
 
-export function useWebSocket(chatId?: string, currentUserId = "currentUser", currentUserName = "John Doe") {
+export function useWebSocket(chatId?: string, currentUserId?: string, currentUserName?: string) {
   const [messages, setMessages] = useState<Message[]>([])
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
@@ -30,7 +30,7 @@ export function useWebSocket(chatId?: string, currentUserId = "currentUser", cur
     };
   
     ws.onmessage = (event) => {
-      if (!isCurrent) return; // Ignore if this is not the current WebSocket
+      if (!isCurrent) return;
       try {
         const msg = JSON.parse(event.data);
         setMessages((prev) => [
@@ -38,8 +38,8 @@ export function useWebSocket(chatId?: string, currentUserId = "currentUser", cur
           {
             id: Date.now().toString(),
             content: msg.content,
-            senderId: msg.sender || "other",
-            senderName: msg.senderName || "Other",
+            senderId: msg.sender,
+            senderName: msg.senderName,
             receiverId: chatId,
             timestamp: Date.now(),
           },
@@ -83,15 +83,20 @@ export function useWebSocket(chatId?: string, currentUserId = "currentUser", cur
   }, [chatId]);
   const sendMessage = useCallback(
     (content: string, receiverId: string) => {
+      if (!currentUserId || !currentUserName) {
+        console.error("User ID and name are required to send messages");
+        return;
+      }
+
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(
           JSON.stringify({
             type: "message",
-            content,
+            roomId: receiverId,
             sender: currentUserId,
-            senderName: currentUserName,
+            content,
           })
-        )
+        );
         setMessages((prev) => [
           ...prev,
           {
@@ -102,11 +107,11 @@ export function useWebSocket(chatId?: string, currentUserId = "currentUser", cur
             receiverId,
             timestamp: Date.now(),
           },
-        ])
+        ]);
       }
     },
     [currentUserId, currentUserName]
-  )
+  );
 
   return {
     messages,

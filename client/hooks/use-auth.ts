@@ -10,7 +10,9 @@ export function useProtectedRoute(routeType: "auth" | "chat") {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+
     console.log(token);
+
     if (routeType === "auth") {
       // Protecting auth routes (e.g., /login, /register)
       if (token) {

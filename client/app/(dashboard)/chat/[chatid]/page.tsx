@@ -38,11 +38,32 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const isMobile = useMobile()
-  const { messages, sendMessage, isConnected } = useWebSocket(chatId)
   const [mounted, setMounted] = useState(false)
-
-
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null);
   const { theme, setTheme } = useTheme()
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        setCurrentUser({
+          id: user.id, 
+          name: user.username
+        });
+
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    }
+  }, []);
+  console.log("currentuser:",currentUser)
+  const { messages, sendMessage, isConnected } = useWebSocket(
+    chatId,
+    currentUser?.id,  
+    currentUser?.name 
+  );
+
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -166,10 +187,13 @@ export default function ChatPage() {
                   <ChatMessage
                     key={index}
                     message={msg.content}
-                    timestamp={new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    isOwn={msg.senderId === "currentUser"}
-                    sender={msg.senderId !== "currentUser" ? msg.senderName : undefined}
-                    status={msg.senderId === "currentUser" ? "read" : undefined}
+                    timestamp={new Date(msg.timestamp).toLocaleTimeString([], { 
+                      hour: "2-digit", 
+                      minute: "2-digit" 
+                    })}
+                    isOwn={msg.senderId === currentUser?.id} // Compare with actual user ID
+                    sender={msg.senderId !== currentUser?.id ? msg.senderName : undefined}
+                    status={msg.senderId === currentUser?.id ? "read" : undefined}
                   />
                 ))}
 

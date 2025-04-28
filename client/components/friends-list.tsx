@@ -15,7 +15,7 @@ interface FriendsListProps {
 // Mock data for friends
 const friends = [
   {
-    id: "1",
+    id: "680e7e324c5a7d23e22c9c94",
     name: "Alice Cooper",
     status: "online",
     lastMessage: "Looking forward to it!",
