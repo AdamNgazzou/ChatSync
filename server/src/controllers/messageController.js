@@ -37,3 +37,38 @@ exports.saveMessage = async (messageData) => {
         throw error;
     }
 };
+exports.getMessages = async (req, res) => {
+    try {
+        const roomId = req.params.roomId;
+        const limit = parseInt(req.query.limit) || 20;
+        const before = parseInt(req.query.before) || Date.now();
+        console.log(before)
+        if (!mongoose.Types.ObjectId.isValid(roomId)) {
+            return res.status(400).json({ error: "Invalid roomId format" });
+        }
+
+        const messages = await Message.find({
+            roomId: new mongoose.Types.ObjectId(roomId),
+            createdAt: { $lt: new Date(before) }
+        })
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .populate('senderId', 'username');
+
+        // Get the timestamp of the oldest message for next pagination
+        const hasMore = messages.length === limit;
+        const nextCursor = hasMore ? messages[messages.length - 1].createdAt.getTime() : null;
+
+        return res.status(200).json({
+            messages,
+            pagination: {
+                hasMore,
+                nextCursor,
+                limit
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+        return res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+};

@@ -25,66 +25,166 @@ import {
 } from "lucide-react"
 import { useMobile } from "@/hooks/use-mobile"
 import ChatMessage from "@/components/chat-message"
-import FriendsList from "@/components/friends-list"
 import { useWebSocket } from "@/hooks/use-websocket"
 import { motion } from "framer-motion"
 import { useTheme } from "next-themes"
+import { useInView } from 'react-intersection-observer' 
+import { Message,PaginatedResponse, WSMessage } from "@/types/message"
 
 export default function ChatPage() {
   const params = useParams();
-  const chatId = params?.chatid as string
-  const [message, setMessage] = useState("")
-  const [showFriends, setShowFriends] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const router = useRouter()
-  const isMobile = useMobile()
-  const [mounted, setMounted] = useState(false)
+  const chatId = params?.chatid as string;
+  const [message, setMessage] = useState("");
+  const [showFriends, setShowFriends] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isMobile = useMobile();
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null);
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme } = useTheme();
 
+  const [oldMessages, setOldMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [wasAtBottomBeforeNewMessage, setWasAtBottomBeforeNewMessage] = useState(true);
+
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0,
+    rootMargin: '200px 0px 0px 0px',
+    triggerOnce: false,
+    delay: 100
+  });
+  
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
       try {
         const user = JSON.parse(userData);
         setCurrentUser({
-          id: user.id, 
-          name: user.username
+          id: user.id,
+          name: user.username,
         });
-
       } catch (error) {
         console.error("Error parsing user data:", error);
       }
     }
   }, []);
-  console.log("currentuser:",currentUser)
-  const { messages, sendMessage, isConnected } = useWebSocket(
+
+  const { messages, sendMessage, isConnected } = useWebSocket (
     chatId,
-    currentUser?.id,  
-    currentUser?.name 
+    currentUser?.id,
+    currentUser?.name
   );
+  console.log(messages)
+
+  // Reset old messages and pagination when chatId changes, then fetch first page
+  useEffect(() => {
+    if (chatId) {
+      setOldMessages([]);
+      setHasMore(true);
+      fetchOldMessages(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId]);
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
-  // Scroll to bottom when messages change
+    if (inView && hasMore && !isLoading) {
+      fetchOldMessages();
+    }
+  }, [inView, hasMore, isLoading]);
+  // Fetch old messages (pagination)
+  const fetchOldMessages = async (isInitial = false) => {
+    if (!chatId || isLoading || (!hasMore && !isInitial)) return;
+  
+    try {
+      setIsLoading(true);
+      const oldestMessage = oldMessages[0];
+      const before = oldestMessage
+        ? new Date(oldestMessage.createdAt).getTime()
+        : undefined;
+  
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_API_URL}/chat/${chatId}?limit=10${
+        before ? `&before=${before}` : ""
+      }`;
+  
+      const response = await fetch(url, {
+        headers: {
+          authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
+  
+      if (!response.ok) throw new Error("Failed to fetch messages");
+  
+      const data: PaginatedResponse = await response.json();
+      const reversed = data.messages.reverse(); // oldest → newest
+  
+      setHasMore(data.pagination.hasMore);
+  
+      setOldMessages(prev => {
+        const combined = [...reversed, ...prev];
+        const uniqueMessages = Array.from(
+          new Map(combined.map(msg => [msg._id, msg])).values()
+        );
+        return uniqueMessages;
+      });
+    } catch (err) {
+      console.error("Error fetching messages:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+    useEffect(() => {
+    console.log('Messages updated:', {
+      oldMessagesCount: oldMessages.length,
+      firstMessageTimestamp: oldMessages[0]?.createdAt,
+      lastMessageTimestamp: oldMessages[oldMessages.length - 1]?.createdAt
+    });
+  }, [oldMessages]);
+
+
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    const scrollContainer = scrollAreaRef.current;
+    if (!scrollContainer) return;
+  
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+      setIsAtBottom(distanceFromBottom < 10); // <= Tighter check
+    };
+  
+    scrollContainer.addEventListener("scroll", handleScroll);
+  
+    return () => {
+      scrollContainer.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+  
+  useEffect(() => {
+    // Save if we were at bottom BEFORE new messages are appended
+    setWasAtBottomBeforeNewMessage(isAtBottom);
+  }, [messages.length]); // <- before you scroll
+  
+  useEffect(() => {
+    if (wasAtBottomBeforeNewMessage) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+  
+  
 
   const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     if (message.trim() && chatId) {
-      sendMessage(message, chatId)
-      setMessage("")
+      sendMessage(message, chatId);
+      setMessage("");
     }
-  }
-
- 
+  };
 
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark")
-  }
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-brand-50 to-brand-100 dark:from-dark-200 dark:to-dark-300">
@@ -140,64 +240,51 @@ export default function ChatPage() {
             </div>
 
             {/* Messages area */}
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-1 py-4">
-                <ChatMessage
-                  message="Hey there! How's it going?"
-                  timestamp="10:30 AM"
-                  isOwn={false}
-                  sender="Alice Cooper"
-                  status="read"
-                />
-                <ChatMessage
-                  message="Hi Alice! I'm doing well, thanks for asking. How about you?"
-                  timestamp="10:32 AM"
-                  isOwn={true}
-                  status="read"
-                />
-                <ChatMessage
-                  message="I'm great! Just wanted to check in. Do you have time to catch up later today?"
-                  timestamp="10:33 AM"
-                  isOwn={false}
-                  sender="Alice Cooper"
-                  status="read"
-                />
-                <ChatMessage
-                  message="I'm free after 5 PM. Would that work for you?"
-                  timestamp="10:35 AM"
-                  isOwn={true}
-                  status="read"
-                />
-                <ChatMessage
-                  message="Perfect! Let's plan for 5:30 PM then. I'll send you a calendar invite."
-                  timestamp="10:36 AM"
-                  isOwn={false}
-                  sender="Alice Cooper"
-                  status="read"
-                />
-                <ChatMessage
-                  message="Sounds good! Looking forward to it."
-                  timestamp="10:37 AM"
-                  isOwn={true}
-                  status="read"
-                />
+            <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+            <div className="space-y-1 py-4 flex flex-col">
+            <div ref={loadMoreRef} className="h-8" />
 
-                {/* Render actual messages from WebSocket */}
-                {messages.map((msg, index) => (
-                  <ChatMessage
-                    key={index}
-                    message={msg.content}
-                    timestamp={new Date(msg.timestamp).toLocaleTimeString([], { 
-                      hour: "2-digit", 
-                      minute: "2-digit" 
-                    })}
-                    isOwn={msg.senderId === currentUser?.id} // Compare with actual user ID
-                    sender={msg.senderId !== currentUser?.id ? msg.senderName : undefined}
-                    status={msg.senderId === currentUser?.id ? "read" : undefined}
-                  />
-                ))}
+            {isLoading && (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
+              </div>
+            )}
 
-                <div ref={messagesEndRef} />
+              {/* Old messages */}
+              <div className="flex flex-col space-y-2">
+
+              {oldMessages.map((msg: Message) => (
+                <ChatMessage
+                  key={msg._id}
+                  message={msg.content}
+                  timestamp={new Date(msg.createdAt).toLocaleTimeString([], { 
+                    hour: "2-digit", 
+                    minute: "2-digit" 
+                  })}
+                  isOwn={msg.senderId._id === currentUser?.id}
+                  sender={msg.senderId._id !== currentUser?.id ? msg.senderId.username : undefined}
+                  status={msg.senderId._id === currentUser?.id ? "read" : undefined}
+                />
+              ))}
+
+              {messages.map((msg : WSMessage) => (
+                <ChatMessage
+                  key={msg.id}
+                  message={msg.content}
+                  timestamp={new Date(msg.timestamp).toLocaleTimeString([], { 
+                    hour: "2-digit", 
+                    minute: "2-digit" 
+                  })}
+                  isOwn={msg.senderId === currentUser?.id}
+                  sender={msg.senderId !== currentUser?.id ? msg.senderName : undefined}
+                  status={msg.senderId === currentUser?.id ? "read" : undefined}
+                />
+              ))}
+              </div>
+
+              <div ref={messagesEndRef} />
+ 
+
               </div>
             </ScrollArea>
 

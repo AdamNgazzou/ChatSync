@@ -1,8 +1,8 @@
 const express = require('express');
+const { getMessages } = require("../controllers/messageController");
+
 const router = express.Router();
 
-router.get('/', (req, res) => {
-    res.send("Hello World!");
-});
+router.get('/:roomId', getMessages)
 
 module.exports = router;
