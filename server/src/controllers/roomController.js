@@ -7,10 +7,10 @@ const UserRoom = require("../models/UserRoom"); // Import the UserRoom model
 // Controller to create a new room
 exports.createRoom = async (req, res) => {
     try {
-        const { name, type, members } = req.body;
+        const { name, type, members, image } = req.body;
 
         // Validate required fields
-        if (!type || !members || members.length < 2) {
+        if (!type || !members || members.length < 2 || !image) {
             return res.status(400).json({
                 error: "Invalid data: 'type' is required, and 'members' must include at least 2 users.",
             });
@@ -37,6 +37,7 @@ exports.createRoom = async (req, res) => {
             name: name || null, // Optional for private chats
             type,
             members,
+            image,
         });
 
         // Save the room to the database
@@ -76,7 +77,7 @@ exports.getRoomsByMemberId = async (req, res) => {
         }
 
         // Find UserRoom entries for the given memberId
-        const userRooms = await UserRoom.find({ userId: memberId }).populate("roomId", "name type");
+        const userRooms = await UserRoom.find({ userId: memberId }).populate("roomId", "name type image");
 
         // Map the results to include room details and unread counts
         const rooms = userRooms.map((userRoom) => ({

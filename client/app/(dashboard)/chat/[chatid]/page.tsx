@@ -30,6 +30,7 @@ import { motion } from "framer-motion"
 import { useTheme } from "next-themes"
 import { useInView } from 'react-intersection-observer' 
 import { Message,PaginatedResponse, WSMessage } from "@/types/message"
+import { useRoom } from "@/context/RoomContext";
 
 export default function ChatPage() {
   const params = useParams();
@@ -48,7 +49,7 @@ export default function ChatPage() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [wasAtBottomBeforeNewMessage, setWasAtBottomBeforeNewMessage] = useState(true);
   const isInitialLoad = useRef(true);
-
+  const { activeRoom } = useRoom();
   const { ref: loadMoreRef, inView } = useInView({
     threshold: 0,
     rootMargin: '200px 0px 0px 0px',
@@ -190,7 +191,6 @@ export default function ChatPage() {
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
-
   return (
     <div className="flex h-screen bg-gradient-to-br from-brand-50 to-brand-100 dark:from-dark-200 dark:to-dark-300">
       {/* Sidebar - hidden on mobile unless toggled */}
@@ -209,13 +209,13 @@ export default function ChatPage() {
                   </Button>
                 )}
                 <Avatar className="h-10 w-10 border-2 border-white dark:border-dark-200">
-                  <AvatarImage src="/placeholder.svg?height=40&width=40" />
-                  <AvatarFallback className="bg-gradient-to-br from-brand-400 to-brand-600 text-white">
-                    AC
+                  <AvatarImage src={activeRoom?.image || "/placeholder.svg"} />
+                  <AvatarFallback>
+                    {activeRoom?.name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium">Alice Cooper</div>
+                <div className="font-medium">{activeRoom?.name} hey</div>
                   <div className="text-xs flex items-center">
                     {isConnected ? (
                       <span className="flex items-center text-green-500">

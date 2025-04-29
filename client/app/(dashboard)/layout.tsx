@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth, useProtectedRoute } from "@/hooks/use-auth";
 import { User } from "@/types/user"; // Import the User type
 import Loading from './loading'
+import { RoomProvider } from "@/context/RoomContext";
 
 export default function ChatLayout({ children }: { children: React.ReactNode }) {
   const isLoading = useProtectedRoute("chat"); // Get the loading state
@@ -38,6 +39,8 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
     return <Loading/>; 
   }
   return (
+    <RoomProvider>
+
     <div className="flex h-screen bg-gradient-to-br from-brand-50 to-brand-100 dark:from-dark-200 dark:to-dark-300">
       {/* Sidebar - FriendsList */}
       <motion.div
@@ -59,14 +62,14 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
             </Button>
           </div>
         </div>
+          <FriendsList
+            activeChat={null}
+            setActiveChat={(friendId) => {
+              router.push(`/chat/${friendId}`);
+              if (isMobile) setShowFriends(false);
+            }}
+          />
 
-        <FriendsList
-          activeChat={null}
-          setActiveChat={(friendId) => {
-            router.push(`/chat/${friendId}`);
-            if (isMobile) setShowFriends(false);
-          }}
-        />
         <div className="mt-auto p-4 border-t border-slate-200 dark:border-slate-700/30">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 border-2 border-white dark:border-dark-200">
@@ -87,5 +90,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
       {/* Main content */}
       <div className="flex-1 flex flex-col">{children}</div>
     </div>
+  </RoomProvider>
+
   );
 }
